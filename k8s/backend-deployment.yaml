@@ -5,6 +5,11 @@ metadata:
   namespace: tienda
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Crea 1 pod nuevo antes de destruir los viejos
+      maxUnavailable: 0    # NUNCA permite que la tienda se quede sin pods respondiendo
   selector:
     matchLabels:
       app: tienda-backend
@@ -15,7 +20,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 605492540894.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:eks-v1 # Colocar uri de tu imagen en ECR
+          image: 605492540894.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:eks-v1
           ports:
             - containerPort: 3001
           env:
@@ -32,8 +37,6 @@ spec:
               value: "tienda_perritos"
             - name: DB_PORT
               value: "3306"
-
-          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar 
           resources:
             requests:
               cpu: "100m"
@@ -41,15 +44,12 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
-
-          # HEALTH CHECKS (PROBES)
           readinessProbe:
             httpGet:
               path: /api/health
               port: 3001
             initialDelaySeconds: 5
             periodSeconds: 5
-
           livenessProbe:
             httpGet:
               path: /api/health
